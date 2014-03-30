@@ -3,6 +3,11 @@ import math
 import sys
 
 def gen_notes():
+    """
+    Generates a dict of midi note codes with their corresponding
+        frequency ranges.
+    """
+    
     #A0
     base = [26.728271799, 27.5, 28.317617547]
     #12th root of 2

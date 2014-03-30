@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'gui/fftMIDI.ui'
+# Form implementation generated from reading ui file 'gui/WAVtoMIDI.ui'
 #
-# Created: Sat Mar 29 20:39:58 2014
+# Created: Sat Mar 29 22:11:27 2014
 #      by: PyQt4 UI code generator 4.9.1
 #
 # WARNING! All changes made in this file will be lost!
@@ -29,10 +29,10 @@ class Ui_fftMIDI(object):
         self.slider_activation_level.setOrientation(QtCore.Qt.Horizontal)
         self.slider_activation_level.setObjectName(_fromUtf8("slider_activation_level"))
         self.label_time_quantum = QtGui.QLabel(self.centralwidget)
-        self.label_time_quantum.setGeometry(QtCore.QRect(50, 100, 101, 31))
+        self.label_time_quantum.setGeometry(QtCore.QRect(80, 100, 81, 31))
         self.label_time_quantum.setObjectName(_fromUtf8("label_time_quantum"))
         self.label_activation_level = QtGui.QLabel(self.centralwidget)
-        self.label_activation_level.setGeometry(QtCore.QRect(40, 140, 111, 31))
+        self.label_activation_level.setGeometry(QtCore.QRect(50, 140, 111, 31))
         self.label_activation_level.setObjectName(_fromUtf8("label_activation_level"))
         self.label_time_quantum_display = QtGui.QLabel(self.centralwidget)
         self.label_time_quantum_display.setGeometry(QtCore.QRect(380, 100, 51, 31))
@@ -72,8 +72,8 @@ class Ui_fftMIDI(object):
 
     def retranslateUi(self, fftMIDI):
         fftMIDI.setWindowTitle(QtGui.QApplication.translate("fftMIDI", "MainWindow", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_time_quantum.setText(QtGui.QApplication.translate("fftMIDI", "Time Quantum", None, QtGui.QApplication.UnicodeUTF8))
-        self.label_activation_level.setText(QtGui.QApplication.translate("fftMIDI", "Activation Level", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_time_quantum.setText(QtGui.QApplication.translate("fftMIDI", "Resolution", None, QtGui.QApplication.UnicodeUTF8))
+        self.label_activation_level.setText(QtGui.QApplication.translate("fftMIDI", "Volume Cutoff", None, QtGui.QApplication.UnicodeUTF8))
         self.label_time_quantum_display.setText(QtGui.QApplication.translate("fftMIDI", "0 ms", None, QtGui.QApplication.UnicodeUTF8))
         self.label_activation_level_display.setText(QtGui.QApplication.translate("fftMIDI", "0%", None, QtGui.QApplication.UnicodeUTF8))
         self.button_infile.setText(QtGui.QApplication.translate("fftMIDI", "Input File (WAV)", None, QtGui.QApplication.UnicodeUTF8))

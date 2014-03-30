@@ -10,4 +10,4 @@ pydoc:
 	sh scripts/recursivepydoc.sh
 
 gui: FORCE
-	pyuic4 -x gui/fftMIDI.ui -o gui/fftMIDI_gui.py
+	pyuic4 -x gui/WAVtoMIDI.ui -o gui/WAVtoMIDI_gui.py
