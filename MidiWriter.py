@@ -56,7 +56,7 @@ class MidiWriter(object):
         
         self.current_tick = current_tick
         
-    def add_notes(self, notes):
+    def add_notes(self, note_list):
         """
         notes is a list of midi notes to add at the current
             time step.
@@ -64,18 +64,20 @@ class MidiWriter(object):
         Adds each note in the list to the current time step
             with the volume, track and channel specified.
         """
-        
-        for key, val in notes.items():
-            pitch = key
-            volume = val['volume']
-            track = val['track']
-            channel = val['channel']
-            time = self.get_current_tick()
-            duration = self.get_tick_quantum()
-            pattern = self.get_pattern()
-            pattern.addNote(track,channel,pitch,time,duration,volume)
-        
-        self.set_current_tick(self.get_current_tick() + self.get_tick_quantum())
+        for notes in note_list:
+            for key, val in notes.items():
+                pitch = key
+                volume = val['volume']
+                track = val['track']
+                channel = val['channel']
+                time = self.get_current_tick()
+                duration = self.get_tick_quantum() * val['duration']
+                pattern = self.get_pattern()
+                
+                if pitch >= 0:
+                    pattern.addNote(track,channel,pitch,time,duration,volume)
+            
+            self.set_current_tick(self.get_current_tick() + self.get_tick_quantum())
     
     def write_file(self):
         """

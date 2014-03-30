@@ -14,6 +14,8 @@ def get_samples_from_wav(infile):
     raw_frames = wav.readframes(nframes)
     frames = format_frames(raw_frames, sampwidth, nchannels)
     samples = []
+    total = 0.0
+    increment = 10.0 / nframes
     
     #First pass to build list.
     #24-bit

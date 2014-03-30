@@ -8,13 +8,13 @@ def gen_notes():
         frequency ranges.
     """
     
-    #A0
-    base = [26.728271799, 27.5, 28.317617547]
+    #C0
+    base = [15.892725498, 16.351597831, 16.837756133]
     #12th root of 2
     multiplier = 1.05946309436
     
-    notes = {21 : base}
-    for i in range(22, 109):
+    notes = {0 : base}
+    for i in range(1, 127):
         mid = multiplier * notes[i - 1][1]
         low = (mid + notes[i - 1][1]) / 2.0
         high = (mid + (multiplier * mid)) / 2.0

@@ -19,7 +19,7 @@ class GUI(WAVtoMIDI_gui.Ui_fftMIDI):
         Starts the GUI.
         """
         
-        app = QtGui.QApplication(sys.argv)
+        self.app = QtGui.QApplication(sys.argv)
         MainWindow = QtGui.QMainWindow()
         
         #set default computational values
@@ -29,13 +29,15 @@ class GUI(WAVtoMIDI_gui.Ui_fftMIDI):
         self.outfile = os.path.dirname(os.path.realpath(__file__)) + "/temp.mid"
         self.samples = []
         self.rate = 44100
+        self.condense = True
+        self.single_note = False
         
         self.setupUi(MainWindow)
         
         #Bind the gui elements to their respective methods.
         self.bind_actions()
         MainWindow.show()
-        sys.exit(app.exec_())
+        sys.exit(self.app.exec_())
         
     def bind_actions(self):
         """
@@ -62,6 +64,43 @@ class GUI(WAVtoMIDI_gui.Ui_fftMIDI):
         self.slider_activation_level.setValue(self.activation_level)
         self.label_activation_level_display.setText(str(self.activation_level) + "%")
         self.slider_activation_level.connect(self.slider_activation_level, QtCore.SIGNAL('valueChanged(int)'), self.activation_level_change)
+        
+        #Condense notes
+        self.radio_condense_notes.setChecked(True)
+        self.radio_condense_notes.connect(self.radio_condense_notes, QtCore.SIGNAL('clicked()'), self.condense_notes_toggle)
+        
+        #Single Note Mode
+        self.radio_single_note.setChecked(False)
+        self.radio_single_note.connect(self.radio_single_note, QtCore.SIGNAL('clicked()'), self.single_note_toggle)
+        
+        #Progress bar
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.hide()
+        
+    def single_note_toggle(self):
+        """
+        Toggles single note mode.
+        
+        In this mode, only the dominant note is written out.
+        """
+        
+        if self.radio_single_note.isChecked():
+            self.single_note = True
+        else:
+            self.single_note = False
+
+    def condense_notes_toggle(self):
+        """
+        Toggles condense notes mode.
+        
+        In this mode consecutive, identical notes are combined.
+        """
+        if self.radio_condense_notes.isChecked():
+            self.condense = True
+        else:
+            self.condense = False
         
     def set_run_text_error(self, text):
         """
@@ -125,15 +164,19 @@ class GUI(WAVtoMIDI_gui.Ui_fftMIDI):
         """
         
         try:
+            #Remove any previous labels
+            self.set_run_text_error("")
+            
             #Check for an infile.
             if self.infile != "":
                 self.gen_midi()
-                self.set_run_text_confirmation("Done!")
             
             #Otherwise, set the error text.
             else:
+                self.progress_bar.hide()
                 self.set_run_text_error("You haven't selected an input file!")
         except:
+            self.progress_bar.hide()
             self.set_run_text_error("Unknown Error!")
             
     def gen_midi(self):
@@ -141,8 +184,10 @@ class GUI(WAVtoMIDI_gui.Ui_fftMIDI):
         Gets the samples from the .wav input file and uses the FFT object
             to transform them into a midi file.
         """
-        
+        self.progress_bar.show()
+        self.progress_bar.setValue(10)
+        self.app.processEvents()
         self.samples, self.rate = WavParser.get_samples_from_wav(str(self.infile))
-        fft = FFT(self.samples, self.rate, self.time_quantum, self.activation_level, self.outfile)
+        fft = FFT(self.samples, self.rate, self.time_quantum, self.activation_level, self.condense, self.single_note, self.outfile, self.progress_bar, self.app)
         fft.calculate()
         

@@ -11,3 +11,6 @@ pydoc:
 
 gui: FORCE
 	pyuic4 -x gui/WAVtoMIDI.ui -o gui/WAVtoMIDI_gui.py
+	
+notes:
+	python scripts/gen_notes.py > notes.py
