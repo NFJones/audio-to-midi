@@ -1,4 +1,4 @@
-from audio_to_midi import midi_file
+from midiutil import MIDIFile
 
 
 class MidiWriter(object):
@@ -15,7 +15,7 @@ class MidiWriter(object):
         time_quantum is the time window in ms.
         """
 
-        self.pattern = midi_file.MIDIFile(1)
+        self.pattern = MIDIFile(1)
         self.outfile = outfile
         self.current_tick = 0
 
