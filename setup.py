@@ -15,7 +15,7 @@ with open(path.join(here, "requirements.txt"), "r") as infile:
 
 setup(
     name="audio_to_midi",
-    version="2019.2",
+    version="2019.3",
     description="Convert audio to multichannel MIDI.",
     long_description=long_description,
     long_description_content_type="text/markdown",

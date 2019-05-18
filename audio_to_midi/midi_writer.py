@@ -7,12 +7,12 @@ class MidiWriter(object):
         a midi file from it.
     """
 
-    def __init__(self, outfile, time_quantum, bpm):
+    def __init__(self, outfile, time_window, bpm):
         """
         MidiWriter object constructor.
         
         outfile is the file to be written to.
-        time_quantum is the time window in ms.
+        time_window is the time window in ms.
         """
 
         self.midi_file = MIDIFile(1)
@@ -22,7 +22,7 @@ class MidiWriter(object):
         self.current_tick = 0
 
         # Determine the number of ticks per note.
-        self.tick_quantum = int(time_quantum / 100) + 1
+        self.tick_window = int(time_window / 100) + 1
 
     def reset_time(self):
         self.current_tick = 0
@@ -43,11 +43,11 @@ class MidiWriter(object):
                         val["channel"],
                         pitch,
                         self.current_tick,
-                        self.tick_quantum * val["duration"],
+                        self.tick_window * val["duration"],
                         val["volume"],
                     )
 
-            self.current_tick += self.tick_quantum
+            self.current_tick += self.tick_window
 
     def write_file(self):
         """

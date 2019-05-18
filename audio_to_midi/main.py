@@ -37,7 +37,7 @@ def main():
         "--output", "-o", help="The MIDI file to output. Default: <infile>.mid"
     )
     parser.add_argument(
-        "--time-quantum",
+        "--time-window",
         "-t",
         default=5.0,
         type=float,
@@ -103,7 +103,7 @@ def main():
         samples=samples,
         channels=len(samples[0]),
         samplerate=samplerate,
-        time_quantum=args.time_quantum,
+        time_window=args.time_window,
         activation_level=args.activation_level,
         condense=args.condense,
         single_note=args.single_note,

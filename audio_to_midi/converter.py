@@ -16,7 +16,7 @@ class Converter(object):
         samples=None,
         samplerate=None,
         channels=0,
-        time_quantum=None,
+        time_window=None,
         activation_level=None,
         condense=None,
         single_note=None,
@@ -28,7 +28,7 @@ class Converter(object):
         
         samples is a list of raw audio samples.
         rate is the sampling frequency of the audio samples.
-        time_quantum is the interval (in ms) over which to compute the fft's.
+        time_window is the interval (in ms) over which to compute the fft's.
         activation_level is the volume cutoff percentage for frequencies.
         outfile is the MIDI file to be written to.
         """
@@ -37,32 +37,32 @@ class Converter(object):
         self.channels = channels
         self.length = len(samples)
         self.samplerate = samplerate
-        self.time_quantum = time_quantum
+        self.time_window = time_window
         self.activation_level = activation_level
         self.condense = condense
         self.single_note = single_note
         self.outfile = outfile
         self.progress_callback = progress_callback
         self.notes = notes.generate()
-        self.bpm = int((60 * 1000) / self.time_quantum)
+        self.bpm = int((60 * 1000) / self.time_window)
 
-        # Get the number of samples per time_quantum
-        self.step_size = self.time_quantum_to_step_size(
-            self.time_quantum, self.samplerate
+        # Get the number of samples per time_window
+        self.step_size = self.time_window_to_step_size(
+            self.time_window, self.samplerate
         )
 
-    def time_quantum_to_step_size(self, time_quantum, rate):
+    def time_window_to_step_size(self, time_window, rate):
         """
-        time_quantum is the time in ms over which to compute fft's.
+        time_window is the time in ms over which to compute fft's.
         rate is the audio sampling rate in samples/sec.
         
-        Transforms the time quantum into an index step size and 
+        Transforms the time window into an index step size and 
             returns the result.
         """
 
-        # rate/1000(samples/ms) * time_quantum(ms) = step_size(samples)
+        # rate/1000(samples/ms) * time_window(ms) = step_size(samples)
         rate_per_ms = rate / 1000
-        step_size = rate_per_ms * time_quantum
+        step_size = rate_per_ms * time_window
 
         return int(step_size)
 
@@ -228,7 +228,7 @@ class Converter(object):
         """
 
         steps = int(len(self.samples) / self.step_size)
-        writer = midi_writer.MidiWriter(self.outfile, self.time_quantum, self.bpm)
+        writer = midi_writer.MidiWriter(self.outfile, self.time_window, self.bpm)
         freqs = []
 
         samples = []
