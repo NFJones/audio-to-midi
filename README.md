@@ -16,7 +16,7 @@
 > audio-to-midi --help
 usage: audio-to-midi [-h] [--output OUTPUT] [--time-quantum TIME_QUANTUM]
                      [--activation-level ACTIVATION_LEVEL] [--condense]
-                     [--single-note]
+                     [--single-note] [--no-progress]
                      infile
 
 positional arguments:
@@ -35,4 +35,5 @@ optional arguments:
   --condense, -c        Combine contiguous notes at their average amplitude.
   --single-note, -s     Only add the loudest note to the MIDI file for a given
                         time span.
+  --no-progress, -n     Don't print the progress bar.
 ```
