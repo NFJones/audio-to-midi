@@ -62,6 +62,9 @@ def main():
         action="store_true",
         help="Only add the loudest note to the MIDI file for a given time span.",
     )
+    parser.add_argument(
+        "--no-progress", "-n", action="store_true", help="Don't print the progress bar."
+    )
     args = parser.parse_args()
 
     args.output = (
@@ -90,8 +93,11 @@ def main():
         nonlocal total
         return current, total
 
-    progress_thread = threading.Thread(target=progress_bar, args=(get_progress,))
-    progress_thread.start()
+    print("Converting: {}".format(args.infile))
+
+    if not args.no_progress:
+        progress_thread = threading.Thread(target=progress_bar, args=(get_progress,))
+        progress_thread.start()
 
     process = converter.Converter(
         samples=samples,
@@ -106,7 +112,8 @@ def main():
     )
     process.convert()
 
-    progress_thread.join()
+    if not args.no_progress:
+        progress_thread.join()
 
 
 if __name__ == "__main__":
