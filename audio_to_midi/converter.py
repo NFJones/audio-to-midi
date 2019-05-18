@@ -5,7 +5,7 @@ import math
 from audio_to_midi import midi_writer, notes
 
 
-class FFT(object):
+class Converter(object):
     """
     An object which takes in a list of audio samples and transforms
         them into midi data which is written out to a .mid file.
@@ -21,6 +21,7 @@ class FFT(object):
         condense=None,
         single_note=None,
         outfile=None,
+        progress_callback=None,
     ):
         """
         FFT object constructor.
@@ -41,6 +42,8 @@ class FFT(object):
         self.condense = condense
         self.single_note = single_note
         self.outfile = outfile
+        self.progress_callback = progress_callback
+        self.notes = notes.generate()
 
         # Get the number of samples per time_quantum
         self.step_size = self.time_quantum_to_step_size(
@@ -74,7 +77,7 @@ class FFT(object):
 
         reduced_freqs = {}
         for freq in freqs:
-            for key, val in notes.notes.items():
+            for key, val in self.notes.items():
                 key = key - 7
                 # Find the freq's equivalence class, adding the amplitudes.
                 if val[0] <= freq[0] <= val[2]:
@@ -216,7 +219,7 @@ class FFT(object):
 
         return midi_list
 
-    def calculate(self):
+    def convert(self):
         """
         Performs the fft for each time step and uses fft_to_frequencies
             to transform the result into midi compatible data. This data
@@ -232,10 +235,17 @@ class FFT(object):
             samples.append([s[i] for s in self.samples])
         self.samples = samples
 
+        current = 0
+        total = self.channels * steps
         for channel in range(self.channels):
             freqs = []
             writer.reset_time()
+
             for i in range(steps):
+                current += 1
+                if self.progress_callback:
+                    self.progress_callback(current, total)
+
                 if i < steps - 1:
                     amplitudes = numpy.fft.fft(
                         self.samples[channel][
@@ -259,4 +269,3 @@ class FFT(object):
             writer.add_notes(midi_list, channel)
 
         writer.write_file()
-

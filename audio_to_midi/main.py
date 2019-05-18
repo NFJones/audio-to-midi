@@ -2,8 +2,32 @@ import argparse
 import soundfile
 import os
 import numpy
+import sys
+import threading
+import time
 
-from audio_to_midi import fft
+from audio_to_midi import converter
+
+
+def progress_bar(progress_cb):
+    current = 0
+    total = 100
+
+    while True:
+        current, total = progress_cb()
+        percentage = (current / total) * 100
+
+        bar_width = int((current / total) * 80)
+        space_width = 80 - bar_width
+        sys.stdout.write(
+            "\r|{}{}| {:.2f}%".format("=" * bar_width, " " * space_width, percentage)
+        )
+
+        time.sleep(0.1)
+
+        if int(percentage) == 100:
+            break
+    print()
 
 
 def main():
@@ -51,7 +75,25 @@ def main():
     if isinstance(samples[0], numpy.float64):
         samples = [[s] for s in samples]
 
-    f = fft.FFT(
+    current = 0
+    total = len(samples)
+
+    def set_progress(c, t):
+        nonlocal current
+        nonlocal total
+
+        current = c
+        total = t
+
+    def get_progress():
+        nonlocal current
+        nonlocal total
+        return current, total
+
+    progress_thread = threading.Thread(target=progress_bar, args=(get_progress,))
+    progress_thread.start()
+
+    process = converter.Converter(
         samples=samples,
         channels=len(samples[0]),
         samplerate=samplerate,
@@ -60,8 +102,11 @@ def main():
         condense=args.condense,
         single_note=args.single_note,
         outfile=args.output,
+        progress_callback=set_progress,
     )
-    f.calculate()
+    process.convert()
+
+    progress_thread.join()
 
 
 if __name__ == "__main__":
