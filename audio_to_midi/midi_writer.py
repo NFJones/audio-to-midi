@@ -7,7 +7,7 @@ class MidiWriter(object):
         a midi file from it.
     """
 
-    def __init__(self, outfile, time_quantum):
+    def __init__(self, outfile, time_quantum, bpm):
         """
         MidiWriter object constructor.
         
@@ -15,7 +15,9 @@ class MidiWriter(object):
         time_quantum is the time window in ms.
         """
 
-        self.pattern = MIDIFile(1)
+        self.midi_file = MIDIFile(1)
+        self.midi_file.addTempo(0, 1, bpm)
+
         self.outfile = outfile
         self.current_tick = 0
 
@@ -25,7 +27,7 @@ class MidiWriter(object):
     def reset_time(self):
         self.current_tick = 0
 
-    def add_notes(self, note_list, channel):
+    def add_notes(self, note_list):
         """
         notes is a list of midi notes to add at the current
             time step.
@@ -36,9 +38,9 @@ class MidiWriter(object):
         for notes in note_list:
             for pitch, val in notes.items():
                 if pitch >= 0:
-                    self.pattern.addNote(
+                    self.midi_file.addNote(
                         val["track"],
-                        channel,
+                        val["channel"],
                         pitch,
                         self.current_tick,
                         self.tick_quantum * val["duration"],
@@ -49,8 +51,8 @@ class MidiWriter(object):
 
     def write_file(self):
         """
-        Writes the midi pattern to the output file.
+        Writes the midi data to the output file.
         """
 
         with open(self.outfile, "wb") as outfile:
-            self.pattern.writeFile(outfile)
+            self.midi_file.writeFile(outfile)

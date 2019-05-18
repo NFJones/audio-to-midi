@@ -44,6 +44,7 @@ class Converter(object):
         self.outfile = outfile
         self.progress_callback = progress_callback
         self.notes = notes.generate()
+        self.bpm = int((60 * 1000) / self.time_quantum)
 
         # Get the number of samples per time_quantum
         self.step_size = self.time_quantum_to_step_size(
@@ -91,7 +92,7 @@ class Converter(object):
 
         return reduced_freqs
 
-    def freqs_to_midi(self, freq_list):
+    def freqs_to_midi(self, freq_list, channel):
         """
         freq_list is a list of frequencies with normalized amplitudes.
         
@@ -110,7 +111,7 @@ class Converter(object):
                         {
                             key: {
                                 "track": 0,
-                                "channel": 1,
+                                "channel": channel,
                                 "volume": int(127 * val),
                                 "duration": 1,
                             }
@@ -227,7 +228,7 @@ class Converter(object):
         """
 
         steps = int(len(self.samples) / self.step_size)
-        writer = midi_writer.MidiWriter(self.outfile, self.time_quantum)
+        writer = midi_writer.MidiWriter(self.outfile, self.time_quantum, self.bpm)
         freqs = []
 
         samples = []
@@ -262,10 +263,10 @@ class Converter(object):
 
             freqs = self.normalize_freqs(freqs)
             if self.condense:
-                midi_list = self.condense_midi_notes(self.freqs_to_midi(freqs))
+                midi_list = self.condense_midi_notes(self.freqs_to_midi(freqs, channel))
             else:
-                midi_list = self.freqs_to_midi(freqs)
+                midi_list = self.freqs_to_midi(freqs, channel)
 
-            writer.add_notes(midi_list, channel)
+            writer.add_notes(midi_list)
 
         writer.write_file()
