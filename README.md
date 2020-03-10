@@ -14,10 +14,9 @@
 
 ```shell
 > audio-to-midi --help
-usage: audio-to-midi [-h] [--output OUTPUT] [--time-window TIME_WINDOW]
-                     [--activation-level ACTIVATION_LEVEL] [--condense]
-                     [--single-note] [--no-progress]
-                     infile
+usage: audio-to-midi [-h] [--output OUTPUT] [--time-window TIME_WINDOW] 
+  [--activation-level ACTIVATION_LEVEL] [--condense] [--single-note] 
+  [--note-count NOTE_COUNT] [--no-progress] infile
 
 positional arguments:
   infile                The sound file to process.
@@ -27,14 +26,13 @@ optional arguments:
   --output OUTPUT, -o OUTPUT
                         The MIDI file to output. Default: <infile>.mid
   --time-window TIME_WINDOW, -t TIME_WINDOW
-                        The time span over which to compute the individual
-                        FFTs in milliseconds.
+                        The time span over which to compute the individual FFTs in milliseconds.
   --activation-level ACTIVATION_LEVEL, -a ACTIVATION_LEVEL
-                        The amplitude threshold for notes to be added to the
-                        MIDI file. Must be between 0 and 1.
+                        The amplitude threshold for notes to be added to the MIDI file. Must be between 0 and 1.
   --condense, -c        Combine contiguous notes at their average amplitude.
-  --single-note, -s     Only add the loudest note to the MIDI file for a given
-                        time span.
+  --single-note, -s     Only add the loudest note to the MIDI file for a given time window.
+  --note-count NOTE_COUNT, -C NOTE_COUNT
+                        Only add the loudest n notes to the MIDI file for a given time window.
   --no-progress, -n     Don't print the progress bar.
 ```
 
