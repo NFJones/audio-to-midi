@@ -1,6 +1,7 @@
 import cmath
 import numpy
 import math
+import functools
 
 from audio_to_midi import midi_writer, notes
 
@@ -19,7 +20,7 @@ class Converter(object):
         time_window=None,
         activation_level=None,
         condense=None,
-        single_note=None,
+        note_count=None,
         outfile=None,
         progress_callback=None,
     ):
@@ -40,7 +41,7 @@ class Converter(object):
         self.time_window = time_window
         self.activation_level = activation_level
         self.condense = condense
-        self.single_note = single_note
+        self.note_count = note_count
         self.outfile = outfile
         self.progress_callback = progress_callback
         self.notes = notes.generate()
@@ -79,7 +80,7 @@ class Converter(object):
         reduced_freqs = {}
         for freq in freqs:
             for key, val in self.notes.items():
-                key = key - 7
+                key = key + 12
                 # Find the freq's equivalence class, adding the amplitudes.
                 if val[0] <= freq[0] <= val[2]:
                     if key in reduced_freqs.keys():
@@ -117,19 +118,12 @@ class Converter(object):
                             }
                         }
                     )
-            if self.single_note:
-                max_note = None
-                index = None
-                for note, info in midi_notes.items():
-                    if max_note == None:
-                        max_note = midi_notes[note]
-                    elif info["volume"] > max_note["volume"]:
-                        max_note = midi_notes[note]
-                        index = note
-                if max_note == None:
-                    midi_notes = {}
-                else:
-                    midi_notes = {index: max_note}
+            if self.note_count > 0:
+                sorted_notes = sorted(
+                    midi_notes, key=lambda val: midi_notes[val]["volume"]
+                )[::-1]
+                max_count = min(len(sorted_notes), self.note_count)
+                midi_notes = {key: midi_notes[key] for key in sorted_notes[:max_count]}
             midi_list.append(midi_notes)
 
         return midi_list

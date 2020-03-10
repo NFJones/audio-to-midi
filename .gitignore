@@ -7,3 +7,4 @@ dist
 *.pyc
 python-*
 python3-*
+test.wav*

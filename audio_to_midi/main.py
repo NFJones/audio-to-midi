@@ -5,30 +5,21 @@ import numpy
 import sys
 import threading
 import time
+import progressbar
 
 from audio_to_midi import converter
 
 
 def progress_bar(progress_cb):
-    current = 0
-    total = 100
+    current, total = progress_cb()
 
-    while True:
-        current, total = progress_cb()
-        percentage = (current / total) * 100
-
-        bar_width = int((current / total) * 80)
-        space_width = 80 - bar_width
-        sys.stdout.write(
-            "\r|{}{}| {:.2f}%".format("=" * bar_width, " " * space_width, percentage)
-        )
-
-        time.sleep(0.1)
-
-        if int(percentage) == 100:
-            break
-    print()
-
+    with progressbar.ProgressBar(max_value=total) as progress:
+        while True:
+            current, total = progress_cb()
+            progress.update(current)
+            time.sleep(0.1)
+            if current == total:
+                break
 
 def main():
     parser = argparse.ArgumentParser()
@@ -60,7 +51,14 @@ def main():
         "--single-note",
         "-s",
         action="store_true",
-        help="Only add the loudest note to the MIDI file for a given time span.",
+        help="Only add the loudest note to the MIDI file for a given time window.",
+    )
+    parser.add_argument(
+        "--note-count",
+        "-C",
+        type=int,
+        default=0,
+        help="Only add the loudest n notes to the MIDI file for a given time window.",
     )
     parser.add_argument(
         "--no-progress", "-n", action="store_true", help="Don't print the progress bar."
@@ -98,6 +96,9 @@ def main():
     if not args.no_progress:
         progress_thread = threading.Thread(target=progress_bar, args=(get_progress,))
         progress_thread.start()
+    
+    if args.single_note:
+        args.note_count = 1
 
     process = converter.Converter(
         samples=samples,
@@ -106,7 +107,7 @@ def main():
         time_window=args.time_window,
         activation_level=args.activation_level,
         condense=args.condense,
-        single_note=args.single_note,
+        note_count=args.note_count,
         outfile=args.output,
         progress_callback=set_progress,
     )

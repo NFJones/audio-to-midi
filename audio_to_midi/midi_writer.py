@@ -37,7 +37,7 @@ class MidiWriter(object):
         """
         for notes in note_list:
             for pitch, val in notes.items():
-                if pitch >= 0:
+                if pitch:
                     self.midi_file.addNote(
                         val["track"],
                         val["channel"],
