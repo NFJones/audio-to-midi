@@ -75,10 +75,6 @@ def main():
 
         progress = progress_bar.ProgressBar()
 
-        def set_progress(current, total):
-            if not args.no_progress:
-                progress.update(current=current, total=total)
-
         process = converter.Converter(
             infile=args.infile,
             outfile=args.output,
@@ -86,7 +82,7 @@ def main():
             activation_level=args.activation_level,
             condense=args.condense,
             note_count=args.note_count,
-            progress_callback=set_progress,
+            progress=None if args.no_progress else progress,
             bpm=args.bpm,
         )
         process.convert()

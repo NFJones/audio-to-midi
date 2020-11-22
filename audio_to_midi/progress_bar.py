@@ -1,6 +1,6 @@
-import progressbar
 import time
 import threading
+import progressbar
 
 
 class ProgressBar:

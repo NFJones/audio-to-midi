@@ -1,9 +1,9 @@
+from collections import defaultdict
+
 import python3_midi as midi
 
-from collections import defaultdict, namedtuple
 
-
-class MidiWriter(object):
+class MidiWriter:
     def __init__(self, outfile, channels, time_window, bpm=60, condense_notes=False):
         self.outfile = outfile
         self.condense_notes = condense_notes
@@ -16,6 +16,7 @@ class MidiWriter(object):
         self.ms_per_beat = int((1.0 / bps) * 1000)
         self.tick_increment = int(time_window)
         self.skip_count = 1
+        self._need_increment = False
 
         self.track = midi.Track(
             events=[
