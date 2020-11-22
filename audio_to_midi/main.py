@@ -73,8 +73,6 @@ def main():
 
         args = parse_args()
 
-        progress = progress_bar.ProgressBar()
-
         process = converter.Converter(
             infile=args.infile,
             outfile=args.output,
@@ -82,16 +80,13 @@ def main():
             activation_level=args.activation_level,
             condense=args.condense,
             note_count=args.note_count,
-            progress=None if args.no_progress else progress,
+            progress=None if args.no_progress else progress_bar.ProgressBar(),
             bpm=args.bpm,
         )
         process.convert()
-        progress.stop()
     except KeyboardInterrupt:
-        progress.stop()
         sys.exit(1)
     except Exception as e:
-        progress.stop()
         logging.exception(e)
         sys.exit(1)
 
