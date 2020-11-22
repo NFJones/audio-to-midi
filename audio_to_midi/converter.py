@@ -1,20 +1,17 @@
-import cmath
 import numpy
 import math
-import functools
 import soundfile
 import logging
 
-from multiprocessing import Pool
 from audio_to_midi import midi_writer, notes
+from collections import namedtuple
+from operator import attrgetter
+
+
+Note = namedtuple('Note', ['pitch', 'velocity'])
 
 
 class Converter(object):
-    """
-    An object which takes in a list of audio samples and transforms
-        them into midi data which is written out to a .mid file.
-    """
-
     def __init__(
         self,
         infile=None,
@@ -24,21 +21,10 @@ class Converter(object):
         condense=None,
         note_count=None,
         progress_callback=None,
-        threads=1,
+        bpm=60,
     ):
-        """
-        FFT object constructor.
-
-        samples is a list of raw audio samples.
-        rate is the sampling frequency of the audio samples.
-        time_window is the interval (in ms) over which to compute the fft's.
-        activation_level is the volume cutoff percentage for frequencies.
-        outfile is the MIDI file to be written to.
-        """
-
         self.infile = infile
         self.outfile = outfile
-        self.threads = threads
 
         if self.infile:
             self.info = soundfile.info(self.infile)
@@ -52,29 +38,26 @@ class Converter(object):
         self.condense = condense
         self.note_count = note_count
         self.progress_callback = progress_callback
+        self.bpm = bpm
 
         # Get the number of samples per time_window
-        self.step_size = self.time_window_to_step_size(
+        self.block_size = self._time_window_to_block_size(
             self.time_window, self.info.samplerate
         )
 
-        steps = self.info.frames // self.step_size
+        steps = self.info.frames // self.block_size
         self.total = self.info.channels * steps + 1
         self.current = 0
 
-        self.max_freq = self.info.samplerate / 2
-        self.min_freq = 1000 / self.time_window
-
-        logging.info("Window: {} ms".format(self.time_window))
-        logging.info("Bins: {}".format(1000 / self.time_window))
-        logging.info("Frequencies: min = {} Hz, max = {} Hz".format(self.min_freq, self.max_freq))
+        self.max_freq = min(20000, self.info.samplerate / 2)
+        self.min_freq = max(20.0, 1000 / self.time_window)
 
     def _increment_progress(self):
         if self.progress_callback:
             self.current += 1
             self.progress_callback(self.current, self.total)
 
-    def time_window_to_step_size(self, time_window, rate):
+    def _time_window_to_block_size(self, time_window, rate):
         """
         time_window is the time in ms over which to compute fft's.
         rate is the audio sampling rate in samples/sec.
@@ -83,15 +66,15 @@ class Converter(object):
             returns the result.
         """
 
-        # rate/1000(samples/ms) * time_window(ms) = step_size(samples)
+        # rate/1000(samples/ms) * time_window(ms) = block_size(samples)
         rate_per_ms = rate / 1000
-        step_size = rate_per_ms * time_window
+        block_size = rate_per_ms * time_window
 
-        return int(step_size)
+        return int(block_size)
 
-    def reduce_freqs(self, freqs):
+    def _reduce_freqs(self, freqs):
         """
-        freqs is a list of amplitudes produced by fft_to_frequencies().
+        freqs is a list of amplitudes produced by _fft_to_frequencies().
 
         Reduces the list of frequencies to a list of notes and their
             respective volumes by determining what note each frequency
@@ -115,7 +98,7 @@ class Converter(object):
 
         return reduced_freqs
 
-    def freqs_to_midi(self, freq_list, channel):
+    def _freqs_to_midi(self, freqs, channel):
         """
         freq_list is a list of frequencies with normalized amplitudes.
 
@@ -123,43 +106,25 @@ class Converter(object):
             midi volume as well as adding track and channel info.
         """
 
-        midi_list = []
+        activation_level = int(127 * self.activation_level) or 1
+
         max_val = 0.0
-        for freqs in freq_list:
-            midi_notes = {}
-            for key, val in freqs.items():
-                if val >= self.activation_level:
-                    max_val = max(max_val, val)
-                    # The key is the midi note.
-                    midi_notes.update(
-                        {
-                            key: {
-                                "track": 0,
-                                "channel": channel,
-                                "volume": int(255 * (val / 100)),
-                                "duration": 1,
-                            }
-                        }
-                    )
-            if self.note_count > 0:
-                sorted_notes = sorted(
-                    midi_notes, key=lambda val: midi_notes[val]["volume"]
-                )[::-1]
-                max_count = min(len(sorted_notes), self.note_count)
-                midi_notes = {key: midi_notes[key] for key in sorted_notes[:max_count]}
-            midi_list.append(midi_notes)
+        notes = []
+        for pitch, val in freqs.items():
+            if pitch > 127:
+                continue
+            velocity = min(int(127 * (val / 100)), 127)
 
-        return midi_list
+            if velocity > activation_level:
+                max_val = max(max_val, val)
+                notes.append(Note(pitch, velocity))
+        if self.note_count > 0:
+            max_count = min(len(notes), self.note_count)
+            notes = sorted(notes, key=attrgetter('velocity'))[::-1][:max_count]
 
-    def fft_to_frequencies(self, amplitudes):
-        """
-        amplitudes is a list of amplitudes produced by the fft.
+        return notes
 
-        Takes a list of amplitudes and transforms it into a list
-            of midi notes by passing the list through reduce_freqs()
-            and freqs_to_midi().
-        """
-
+    def _fft_to_frequencies(self, amplitudes):
         size = len(amplitudes)
         freqs = []
         # Determine the true amplitudes
@@ -178,79 +143,13 @@ class Converter(object):
                 freqs.append([freq, amplitude])
 
         # Transform the frequency info into midi compatible data.
-        return self.reduce_freqs(freqs[1:])
-
-    def normalize_freqs(self, freq_list):
-        """
-        freq list is a list of dicts containing all of the frequency
-            data from the wav file.
-
-        Normalizes the amplitudes of every frequency in every time step.
-        """
-
-        max_amplitude = 0.0
-        for freqs in freq_list:
-            for key, amplitude in freqs.items():
-                if amplitude > max_amplitude:
-                    max_amplitude = amplitude
-
-        for freqs in freq_list:
-            for key, amplitude in freqs.items():
-                new_amplitude = amplitude / max_amplitude
-                freqs.update({key: new_amplitude})
-
-        return freq_list
-
-    def condense_midi_notes(self, midi_list):
-        """
-        midi_list is a list of dicts containing midi compatible data.
-
-        Combines consecutive notes accross time steps, using the maximum
-            volume seen in the list as the resulting note's volume.
-        """
-
-        for i in range(len(midi_list)):
-            if i < len(midi_list) - 1:
-                cur_midi = midi_list[i]
-
-                for note, info in cur_midi.items():
-                    j = i + 1
-
-                    while j < len(midi_list) - 1:
-                        next_midi = midi_list[j]
-
-                        if note in next_midi.keys():
-                            if next_midi[note]["volume"] > cur_midi[note]["volume"]:
-                                new_volume = next_midi[note]["volume"]
-
-                            else:
-                                new_volume = cur_midi[note]["volume"]
-                            info.update(
-                                {"duration": info["duration"] + 1, "volume": new_volume}
-                            )
-                            cur_midi.update({note: info})
-                            next_midi.pop(note, None)
-
-                        else:
-                            break
-
-                        j += 1
-
-        return midi_list
+        return self._reduce_freqs(freqs[1:])
 
     def _samples_to_freqs(self, notes, channel, samples):
-        freqs = []
-
-        self._increment_progress()
-
         amplitudes = numpy.fft.fft(samples)
+        return self._fft_to_frequencies(amplitudes)
 
-        freqs.append(self.fft_to_frequencies(amplitudes))
-
-        # freqs = self.normalize_freqs(freqs)
-        return freqs
-
-    def _channels_to_notes(self, block, writer):
+    def _block_to_notes(self, block):
         if self.info.channels == 1:
             block = [[s] for s in block]
 
@@ -263,27 +162,31 @@ class Converter(object):
 
         for channel, samples in enumerate(channels):
             freqs = self._samples_to_freqs(notes, channel, samples)
-            notes[channel] = self.freqs_to_midi(freqs, channel)
+            notes[channel] = self._freqs_to_midi(freqs, channel)
 
         return notes
 
     def convert(self):
         """
-        Performs the fft for each time step and uses fft_to_frequencies
-            to transform the result into midi compatible data. This data
-            is then passed to a midi file writer to be written out.
+        Performs the fft for each time step and transforms the result
+            into midi compatible data. This data is then passed to a
+            midi file writer.
         """
 
-        logging.info(str(self.info.extra_info))
+        logging.info(str(self.info))
+        logging.info("window: {} ms".format(self.time_window))
+        logging.info(
+            "frequencies: min = {} Hz, max = {} Hz".format(self.min_freq, self.max_freq)
+        )
 
-        with midi_writer.MidiWriter(self.outfile) as writer:
-            notes = []
-            for block in soundfile.blocks(self.infile, blocksize=self.step_size):
-                notes.append(self._channels_to_notes(block=block, writer=writer))
-
-            self.current = 0
-            for segment in notes:
+        with midi_writer.MidiWriter(
+            outfile=self.outfile,
+            channels=self.info.channels,
+            time_window=self.time_window,
+            bpm=self.bpm,
+            condense_notes=self.condense,
+        ) as writer:
+            for block in soundfile.blocks(self.infile, blocksize=self.block_size):
+                notes = self._block_to_notes(block)
+                writer.add_notes(notes)
                 self._increment_progress()
-                writer.next_beat()
-                for channel in segment:
-                    writer.add_notes(channel)

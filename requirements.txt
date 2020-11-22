@@ -1,7 +1,7 @@
 cffi==1.12.3
 Cython==0.29.7
-MIDIUtil==1.2.1
 numpy==1.16.3
 pycparser==2.19
 SoundFile==0.10.2
 progressbar2==3.50.0
+python3-midi==0.2.4

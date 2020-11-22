@@ -15,7 +15,7 @@ with open(path.join(here, "requirements.txt"), "r") as infile:
 
 setup(
     name="audio_to_midi",
-    version="2019.3",
+    version="2020.1",
     description="Convert audio to multichannel MIDI.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -27,7 +27,7 @@ setup(
     ],
     keywords="audio midi conversion",
     packages=["audio_to_midi"],
-    python_requires=">=3.5.*, <4",
+    python_requires=">=3.5, <4",
     entry_points={"console_scripts": ["audio-to-midi = audio_to_midi.main:main"]},
     install_requires=requirements,
 )

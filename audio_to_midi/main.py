@@ -48,9 +48,11 @@ def parse_args():
         help="Only add the loudest n notes to the MIDI file for a given time window.",
     )
     parser.add_argument(
+        "--bpm", "-b", type=int, help="Beats per minute. Defaults: 60", default=60
+    )
+    parser.add_argument(
         "--no-progress", "-n", action="store_true", help="Don't print the progress bar."
     )
-    parser.add_argument("--jobs", "-j", type=int, help="The number of threads to use.")
     args = parser.parse_args()
 
     args.output = (
@@ -67,7 +69,7 @@ def parse_args():
 
 def main():
     try:
-        logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+        logging.basicConfig(level=logging.DEBUG, format="%(message)s")
 
         args = parse_args()
 
@@ -85,7 +87,7 @@ def main():
             condense=args.condense,
             note_count=args.note_count,
             progress_callback=set_progress,
-            threads=args.jobs
+            bpm=args.bpm,
         )
         process.convert()
         progress.stop()
