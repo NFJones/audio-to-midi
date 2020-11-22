@@ -58,7 +58,7 @@ class Converter:
     def _determine_ranges(self):
         self.notes = notes.generate()
         self.max_freq = min(self.notes[127][-1], self.info.samplerate / 2)
-        self.min_freq = max(20.0, 1000 / self.time_window)
+        self.min_freq = max(self.notes[0][-1], 1000 / self.time_window)
         self.bins = self.block_size // 2
         self.frequencies = numpy.fft.fftfreq(self.bins, 1 / self.info.samplerate)[
             : self.bins // 2
