@@ -14,8 +14,8 @@
 
 ```shell
 > audio-to-midi --help
-usage: audio-to-midi [-h] [--output OUTPUT] [--time-window TIME_WINDOW] [--activation-level ACTIVATION_LEVEL] [--condense] [--single-note]
-                     [--note-count NOTE_COUNT] [--bpm BPM] [--no-progress]
+usage: audio-to-midi [-h] [--output OUTPUT] [--time-window TIME_WINDOW] [--activation-level ACTIVATION_LEVEL] [--condense] [--condense-max] [--single-note]
+                     [--note-count NOTE_COUNT] [--bpm BPM] [--transpose TRANSPOSE] [--key KEY [KEY ...]] [--no-progress]
                      infile
 
 positional arguments:
@@ -30,10 +30,15 @@ optional arguments:
   --activation-level ACTIVATION_LEVEL, -a ACTIVATION_LEVEL
                         The amplitude threshold for notes to be added to the MIDI file. Must be between 0 and 1.
   --condense, -c        Combine contiguous notes at their average amplitude.
+  --condense-max, -m    Write the maximum velocity for a condensed note segment rather than the rolling average.
   --single-note, -s     Only add the loudest note to the MIDI file for a given time window.
   --note-count NOTE_COUNT, -C NOTE_COUNT
                         Only add the loudest n notes to the MIDI file for a given time window.
   --bpm BPM, -b BPM     Beats per minute. Defaults: 60
+  --transpose TRANSPOSE, -T TRANSPOSE
+                        Transpose the MIDI pitches by a constant offset.
+  --key KEY [KEY ...], -k KEY [KEY ...]
+                        Map to a pitch set.
   --no-progress, -n     Don't print the progress bar.
 ```
 

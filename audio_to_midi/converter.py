@@ -20,6 +20,9 @@ class Converter:
         time_window=None,
         activation_level=None,
         condense=None,
+        condense_max=False,
+        transpose=0,
+        key=None,
         note_count=None,
         progress=None,
         bpm=60,
@@ -34,6 +37,9 @@ class Converter:
         self.outfile = outfile
         self.time_window = time_window
         self.condense = condense
+        self.condense_max = condense_max
+        self.transpose = transpose
+        self.key = key
         self.note_count = note_count
         self.progress = progress
         self.bpm = bpm
@@ -114,13 +120,18 @@ class Converter:
 
         return notes
 
+    def _snap_to_key(self, pitch):
+        if self.key:
+            mod = pitch % 12
+            pitch = (12 * (pitch // 12)) + min(self.key, key=lambda x: abs(x - mod))
+        return pitch
+
     @lru_cache(None)
     def _freq_to_pitch(self, freq):
         for pitch, freq_range in self.notes.items():
-            pitch = pitch + 12
             # Find the freq's equivalence class, adding the amplitudes.
             if freq_range[0] <= freq <= freq_range[2]:
-                return pitch
+                return self._snap_to_key(pitch) + self.transpose
         raise RuntimeError("Unmappable frequency: {}".format(freq[0]))
 
     def _reduce_freqs(self, freqs):
@@ -190,7 +201,8 @@ class Converter:
             channels=self.info.channels,
             time_window=self.time_window,
             bpm=self.bpm,
-            condense_notes=self.condense,
+            condense=self.condense,
+            condense_max=self.condense_max,
         ) as writer:
             for block in soundfile.blocks(
                 self.infile,

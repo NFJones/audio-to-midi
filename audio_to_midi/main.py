@@ -35,6 +35,12 @@ def parse_args():
         help="Combine contiguous notes at their average amplitude.",
     )
     parser.add_argument(
+        "--condense-max",
+        "-m",
+        action="store_true",
+        help="Write the maximum velocity for a condensed note segment rather than the rolling average.",
+    )
+    parser.add_argument(
         "--single-note",
         "-s",
         action="store_true",
@@ -51,6 +57,16 @@ def parse_args():
         "--bpm", "-b", type=int, help="Beats per minute. Defaults: 60", default=60
     )
     parser.add_argument(
+        "--transpose",
+        "-T",
+        type=int,
+        default=0,
+        help="Transpose the MIDI pitches by a constant offset.",
+    )
+    parser.add_argument(
+        "--key", "-k", type=int, nargs="+", default=[], help="Map to a pitch set."
+    )
+    parser.add_argument(
         "--no-progress", "-n", action="store_true", help="Don't print the progress bar."
     )
     args = parser.parse_args()
@@ -63,6 +79,11 @@ def parse_args():
 
     if args.single_note:
         args.note_count = 1
+
+    if args.key:
+        for key in args.key:
+            if key not in range(12):
+                raise RuntimeError("Key values must be in the range: [0, 12)")
 
     return args
 
@@ -79,7 +100,10 @@ def main():
             time_window=args.time_window,
             activation_level=args.activation_level,
             condense=args.condense,
+            condense_max=args.condense_max,
             note_count=args.note_count,
+            transpose=args.transpose,
+            key=args.key,
             progress=None if args.no_progress else progress_bar.ProgressBar(),
             bpm=args.bpm,
         )

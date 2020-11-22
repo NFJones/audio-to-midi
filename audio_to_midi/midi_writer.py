@@ -3,14 +3,26 @@ from collections import defaultdict
 import python3_midi as midi
 
 
+class NoteState:
+    __slots__ = ["is_active", "event_index", "count"]
+
+    def __init__(self, is_active=False, event_index=None, count=0):
+        self.is_active = is_active
+        self.event_index = event_index
+        self.count = count
+
+
 class MidiWriter:
-    def __init__(self, outfile, channels, time_window, bpm=60, condense_notes=False):
+    def __init__(
+        self, outfile, channels, time_window, bpm=60, condense=False, condense_max=False
+    ):
         self.outfile = outfile
-        self.condense_notes = condense_notes
+        self.condense = condense
+        self.condense_max = condense_max
         self.channels = channels
         self.time_window = time_window
         self.bpm = bpm
-        self.note_state = [defaultdict(lambda: False) for _ in range(channels)]
+        self.note_state = [defaultdict(lambda: NoteState()) for _ in range(channels)]
 
         bps = self.bpm / 60
         self.ms_per_beat = int((1.0 / bps) * 1000)
@@ -63,7 +75,11 @@ class MidiWriter:
         return ret
 
     def _note_on(self, channel, pitch, velocity):
-        self.note_state[channel][pitch] = True
+        self.note_state[channel][pitch] = NoteState(
+            True,
+            len(self.track),
+            1,
+        )
         self.track.append(
             midi.NoteOnEvent(
                 tick=self.tick, channel=channel, pitch=pitch, velocity=velocity
@@ -71,7 +87,7 @@ class MidiWriter:
         )
 
     def _note_off(self, channel, pitch):
-        self.note_state[channel][pitch] = False
+        self.note_state[channel][pitch] = NoteState()
         self.track.append(
             midi.NoteOffEvent(
                 tick=self.tick,
@@ -89,23 +105,34 @@ class MidiWriter:
             with the volume, track and channel specified.
         """
         self._need_increment = True
-        if not self.condense_notes:
+        if not self.condense:
             self._terminate_notes()
 
         for channel, notes in enumerate(notes):
             new_notes = set()
             stale_notes = []
             for note in notes:
-                is_active = self.note_state[channel][note.pitch]
+                note_state = self.note_state[channel][note.pitch]
                 new_notes.add(note.pitch)
-                if (not self.condense_notes) or (self.condense_notes and not is_active):
+                if (not self.condense) or (self.condense and not note_state.is_active):
                     self._note_on(channel, note.pitch, note.velocity)
+                elif self.condense and note_state.is_active:
+                    index = note_state.event_index
+                    old_velocity = self.track[index].data[1]
+                    if self.condense_max:
+                        self.track[index].data[1] = max(note.velocity, old_velocity)
+                    else:
+                        count = note_state.count
+                        note_state.count += 1
+                        self.track[index].data[1] = (
+                            (old_velocity * count) + note.velocity
+                        ) // (count + 1)
 
-            if self.condense_notes:
+            if self.condense:
                 active_notes = [
                     note
                     for note in self.note_state[channel]
-                    if self.note_state[channel][note]
+                    if self.note_state[channel][note].is_active
                 ]
                 for note in active_notes:
                     if note not in new_notes:
@@ -119,6 +146,6 @@ class MidiWriter:
 
     def _terminate_notes(self):
         for channel in range(self.channels):
-            for pitch, is_active in self.note_state[channel].items():
-                if is_active:
+            for pitch, note_state in self.note_state[channel].items():
+                if note_state.is_active:
                     self._note_off(channel, pitch)

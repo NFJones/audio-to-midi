@@ -1,3 +1,5 @@
+import numpy
+
 def generate():
     """
     Generates a dict of midi note codes with their corresponding
@@ -5,9 +7,10 @@ def generate():
     """
 
     # C0
-    base = [31.785450996, 32.703195662, 33.675512266]
+    base = [7.946362749, 8.1757989155, 8.4188780665]
+    
     # 12th root of 2
-    multiplier = 1.05946309436
+    multiplier = numpy.float_power(2.0, 1.0 / 12)
 
     notes = {0: base}
     for i in range(1, 128):

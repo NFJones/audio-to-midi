@@ -10,5 +10,6 @@ class ProgressBar:
         self.bar = progressbar.ProgressBar(max_value=self.total)
 
     def update(self, current=0, total=0):
+        current = min(current, total)
         self.bar.max_value = total
         self.bar.update(current)
