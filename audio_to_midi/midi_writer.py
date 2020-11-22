@@ -1,3 +1,5 @@
+import logging
+
 from midiutil import MIDIFile
 
 
@@ -7,47 +9,48 @@ class MidiWriter(object):
         a midi file from it.
     """
 
-    def __init__(self, outfile, time_window, bpm):
+    def __init__(self, outfile):
         """
         MidiWriter object constructor.
-        
+
         outfile is the file to be written to.
-        time_window is the time window in ms.
         """
 
-        self.midi_file = MIDIFile(1)
-        self.midi_file.addTempo(0, 1, bpm)
+        self.midi_file = MIDIFile(numTracks=1, eventtime_is_ticks=True)
 
         self.outfile = outfile
-        self.current_tick = 0
+        self.current_beat = 0
+        self.ticks_per_beat = 8
 
-        # Determine the number of ticks per note.
-        self.tick_window = int(time_window / 100) + 1
+        self.note_state = {}
 
-    def reset_time(self):
-        self.current_tick = 0
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.write_file()
 
     def add_notes(self, note_list):
         """
         notes is a list of midi notes to add at the current
             time step.
-            
+
         Adds each note in the list to the current time step
             with the volume, track and channel specified.
         """
         for notes in note_list:
             for pitch, val in notes.items():
-                if pitch:
-                    self.midi_file.addNote(
-                        val["track"],
-                        val["channel"],
-                        pitch,
-                        self.current_tick,
-                        self.tick_window * val["duration"],
-                        val["volume"],
-                    )
+                self.midi_file.addNote(
+                    val["track"],
+                    val["channel"],
+                    pitch,
+                    self.current_beat * self.ticks_per_beat,
+                    val["duration"] * self.ticks_per_beat,
+                    val["volume"],
+                )
 
-            self.current_tick += self.tick_window
+    def next_beat(self):
+        self.current_beat += 1
 
     def write_file(self):
         """

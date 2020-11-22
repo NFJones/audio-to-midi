@@ -8,3 +8,4 @@ dist
 python-*
 python3-*
 test.wav*
+.vscode

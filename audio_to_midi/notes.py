@@ -15,7 +15,7 @@ def generate():
     multiplier = 1.05946309436
 
     notes = {0: base}
-    for i in range(1, 127):
+    for i in range(1, 256):
         mid = multiplier * notes[i - 1][1]
         low = (mid + notes[i - 1][1]) / 2.0
         high = (mid + (multiplier * mid)) / 2.0

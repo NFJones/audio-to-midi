@@ -1,27 +1,14 @@
+#!/usr/bin/env python3
+
 import argparse
-import soundfile
 import os
-import numpy
 import sys
-import threading
-import time
-import progressbar
+import logging
 
-from audio_to_midi import converter
+from audio_to_midi import converter, progress_bar
 
 
-def progress_bar(progress_cb):
-    current, total = progress_cb()
-
-    with progressbar.ProgressBar(max_value=total) as progress:
-        while True:
-            current, total = progress_cb()
-            progress.update(current)
-            time.sleep(0.1)
-            if current == total:
-                break
-
-def main():
+def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("infile", help="The sound file to process.")
     parser.add_argument(
@@ -63,6 +50,7 @@ def main():
     parser.add_argument(
         "--no-progress", "-n", action="store_true", help="Don't print the progress bar."
     )
+    parser.add_argument("--jobs", "-j", type=int, help="The number of threads to use.")
     args = parser.parse_args()
 
     args.output = (
@@ -71,50 +59,43 @@ def main():
         else args.output
     )
 
-    samples, samplerate = soundfile.read(args.infile)
-
-    if isinstance(samples[0], numpy.float64):
-        samples = [[s] for s in samples]
-
-    current = 0
-    total = len(samples)
-
-    def set_progress(c, t):
-        nonlocal current
-        nonlocal total
-
-        current = c
-        total = t
-
-    def get_progress():
-        nonlocal current
-        nonlocal total
-        return current, total
-
-    print("Converting: {}".format(args.infile))
-
-    if not args.no_progress:
-        progress_thread = threading.Thread(target=progress_bar, args=(get_progress,))
-        progress_thread.start()
-    
     if args.single_note:
         args.note_count = 1
 
-    process = converter.Converter(
-        samples=samples,
-        channels=len(samples[0]),
-        samplerate=samplerate,
-        time_window=args.time_window,
-        activation_level=args.activation_level,
-        condense=args.condense,
-        note_count=args.note_count,
-        outfile=args.output,
-        progress_callback=set_progress,
-    )
-    process.convert()
+    return args
 
-    if not args.no_progress:
-        progress_thread.join()
+
+def main():
+    try:
+        logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+
+        args = parse_args()
+
+        progress = progress_bar.ProgressBar()
+
+        def set_progress(current, total):
+            if not args.no_progress:
+                progress.update(current=current, total=total)
+
+        process = converter.Converter(
+            infile=args.infile,
+            outfile=args.output,
+            time_window=args.time_window,
+            activation_level=args.activation_level,
+            condense=args.condense,
+            note_count=args.note_count,
+            progress_callback=set_progress,
+            threads=args.jobs
+        )
+        process.convert()
+        progress.stop()
+    except KeyboardInterrupt:
+        progress.stop()
+        sys.exit(1)
+    except Exception as e:
+        progress.stop()
+        logging.exception(e)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
