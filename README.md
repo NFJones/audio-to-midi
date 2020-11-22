@@ -14,9 +14,9 @@
 
 ```shell
 > audio-to-midi --help
-usage: audio-to-midi [-h] [--output OUTPUT] [--time-window TIME_WINDOW] 
-  [--activation-level ACTIVATION_LEVEL] [--condense] [--single-note] 
-  [--note-count NOTE_COUNT] [--no-progress] infile
+usage: audio-to-midi [-h] [--output OUTPUT] [--time-window TIME_WINDOW] [--activation-level ACTIVATION_LEVEL] [--condense] [--single-note]
+                     [--note-count NOTE_COUNT] [--bpm BPM] [--no-progress]
+                     infile
 
 positional arguments:
   infile                The sound file to process.
@@ -33,15 +33,23 @@ optional arguments:
   --single-note, -s     Only add the loudest note to the MIDI file for a given time window.
   --note-count NOTE_COUNT, -C NOTE_COUNT
                         Only add the loudest n notes to the MIDI file for a given time window.
+  --bpm BPM, -b BPM     Beats per minute. Defaults: 60
   --no-progress, -n     Don't print the progress bar.
 ```
 
 ## Example
 
 ```shell
-> audio-to-midi ./this_is_a_test.wav --time-window 5 --activation-level 0.0
-Converting: ./this_is_a_test.wav
-|================================================================================| 100.00%
+>$ audio-to-midi ./this_is_a_test.wav -b 120 -t 30
+./this_is_a_test.wav
+samplerate: 44100 Hz
+channels: 1
+duration: 2.000 s
+format: WAV (Microsoft) [WAV]
+subtype: Signed 16 bit PCM [PCM_16]
+window: 5.0 ms
+frequencies: min = 200.0 Hz, max = 20000 Hz
+100% (401 of 401) |##############################################################| Elapsed Time: 0:00:00 Time:  0:00:00
 > ls ./*.mid
 ./this_is_a_test.wav.mid
 ```
