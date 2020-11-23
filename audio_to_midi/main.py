@@ -8,6 +8,21 @@ import logging
 from audio_to_midi import converter, progress_bar
 
 
+def _convert_beat_to_time(bpm, beat):
+    try:
+        parts = beat.split("/")
+        if len(parts) > 2:
+            raise Exception()
+
+        beat = [int(part) for part in parts]
+        fraction = beat[0] / beat[1]
+        bps = bpm / 60
+        ms_per_beat = bps * 1000
+        return fraction * ms_per_beat
+    except Exception:
+        raise RuntimeError("Invalid beat format: {}".format(beat))
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("infile", help="The sound file to process.")
@@ -57,6 +72,11 @@ def parse_args():
         "--bpm", "-b", type=int, help="Beats per minute. Defaults: 60", default=60
     )
     parser.add_argument(
+        "--beat",
+        "-B",
+        help="Time window in terms of beats (1/4, 1/8, etc.). Supercedes the time window parameter.",
+    )
+    parser.add_argument(
         "--transpose",
         "-T",
         type=int,
@@ -84,6 +104,10 @@ def parse_args():
         for key in args.key:
             if key not in range(12):
                 raise RuntimeError("Key values must be in the range: [0, 12)")
+
+    if args.beat:
+        args.time_window = _convert_beat_to_time(args.bpm, args.beat)
+        print(args.time_window)
 
     return args
 

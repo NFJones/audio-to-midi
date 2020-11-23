@@ -9,7 +9,14 @@ import soundfile
 
 from audio_to_midi import midi_writer, notes
 
-Note = namedtuple("Note", ["pitch", "velocity"])
+
+class Note:
+    __slots__ = ["pitch", "velocity", "count"]
+
+    def __init__(self, pitch, velocity, count=0):
+        self.pitch = pitch
+        self.velocity = velocity
+        self.count = count
 
 
 class Converter:
@@ -106,12 +113,24 @@ class Converter:
             midi volume as well as adding track and channel info.
         """
 
-        notes = []
-        for pitch, velocity, _ in freqs:
+        notes = [None for _ in range(128)]
+        for pitch, velocity in freqs:
+            if pitch > 127:
+                continue
             velocity = min(int(127 * (velocity / 100)), 127)
 
             if velocity > self.activation_level:
-                notes.append(Note(pitch, velocity))
+                if not notes[pitch]:
+                    notes[pitch] = Note(pitch, velocity)
+                else:
+                    notes[pitch].velocity = int(
+                        ((notes[pitch].velocity * notes[pitch].count) + velocity)
+                        / (notes[pitch].count + 1)
+                    )
+                    notes[pitch].count += 1
+
+        notes = [note for note in notes if note]
+
         if self.note_count > 0:
             max_count = min(len(notes), self.note_count)
             notes = sorted(notes, key=attrgetter("velocity"))[::-1][:max_count]
@@ -125,7 +144,7 @@ class Converter:
         return pitch
 
     @lru_cache(None)
-    def _snap_to_pitch(self, freq):
+    def _freq_to_pitch(self, freq):
         for pitch, freq_range in self.notes.items():
             # Find the freq's equivalence class, adding the amplitudes.
             if freq_range[0] <= freq <= freq_range[2]:
@@ -142,15 +161,11 @@ class Converter:
             note to a single amplitude by summing them together.
         """
 
-        reduced_freqs = [[0, 0, 0] for _ in range(128)]
+        reduced_freqs = []
         for freq in freqs:
-            pitch = self._snap_to_pitch(freq[0])
-            existing = reduced_freqs[pitch]
-            new = ((existing[1] * existing[2]) + freq[1]) / (reduced_freqs[2] + 1)
-            reduced_freqs[pitch][2] += 1
-            reduced_freqs[1] = new
+            reduced_freqs.append((self._freq_to_pitch(freq[0]), freq[1]))
 
-        return [freq for freq in reduced_freqs if freq[1] > 0]
+        return reduced_freqs
 
     def _samples_to_freqs(self, samples):
         amplitudes = numpy.fft.fft(samples)
