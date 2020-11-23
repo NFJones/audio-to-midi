@@ -107,9 +107,7 @@ class Converter:
         """
 
         notes = []
-        for pitch, velocity in freqs:
-            if pitch > 127:
-                continue
+        for pitch, velocity, _ in freqs:
             velocity = min(int(127 * (velocity / 100)), 127)
 
             if velocity > self.activation_level:
@@ -127,7 +125,7 @@ class Converter:
         return pitch
 
     @lru_cache(None)
-    def _freq_to_pitch(self, freq):
+    def _snap_to_pitch(self, freq):
         for pitch, freq_range in self.notes.items():
             # Find the freq's equivalence class, adding the amplitudes.
             if freq_range[0] <= freq <= freq_range[2]:
@@ -144,11 +142,15 @@ class Converter:
             note to a single amplitude by summing them together.
         """
 
-        reduced_freqs = []
+        reduced_freqs = [[0, 0, 0] for _ in range(128)]
         for freq in freqs:
-            reduced_freqs.append((self._freq_to_pitch(freq[0]), freq[1]))
+            pitch = self._snap_to_pitch(freq[0])
+            existing = reduced_freqs[pitch]
+            new = ((existing[1] * existing[2]) + freq[1]) / (reduced_freqs[2] + 1)
+            reduced_freqs[pitch][2] += 1
+            reduced_freqs[1] = new
 
-        return reduced_freqs
+        return [freq for freq in reduced_freqs if freq[1] > 0]
 
     def _samples_to_freqs(self, samples):
         amplitudes = numpy.fft.fft(samples)
