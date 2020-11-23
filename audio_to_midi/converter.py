@@ -29,7 +29,8 @@ class Converter:
         condense=None,
         condense_max=False,
         transpose=0,
-        key=None,
+        pitch_set=None,
+        pitch_range=None,
         note_count=None,
         progress=None,
         bpm=60,
@@ -46,7 +47,8 @@ class Converter:
         self.condense = condense
         self.condense_max = condense_max
         self.transpose = transpose
-        self.key = key
+        self.pitch_set = pitch_set
+        self.pitch_range = pitch_range or [0, 127]
         self.note_count = note_count
         self.progress = progress
         self.bpm = bpm
@@ -115,7 +117,7 @@ class Converter:
 
         notes = [None for _ in range(128)]
         for pitch, velocity in freqs:
-            if pitch > 127:
+            if not (self.pitch_range[0] <= pitch <= self.pitch_range[1]):
                 continue
             velocity = min(int(127 * (velocity / 100)), 127)
 
@@ -138,9 +140,11 @@ class Converter:
         return notes
 
     def _snap_to_key(self, pitch):
-        if self.key:
+        if self.pitch_set:
             mod = pitch % 12
-            pitch = (12 * (pitch // 12)) + min(self.key, key=lambda x: abs(x - mod))
+            pitch = (12 * (pitch // 12)) + min(
+                self.pitch_set, key=lambda x: abs(x - mod)
+            )
         return pitch
 
     @lru_cache(None)
@@ -226,7 +230,14 @@ class Converter:
                 blocksize=self.block_size,
                 always_2d=True,
             ):
-                if len(block) == self.block_size:
-                    notes = self._block_to_notes(block)
-                    writer.add_notes(notes)
+                if len(block) != self.block_size:
+                    filler = numpy.array(
+                        [
+                            numpy.array([0.0 for _ in range(self.info.channels)])
+                            for _ in range(self.block_size - len(block))
+                        ]
+                    )
+                    block = numpy.append(block, filler, axis=0)
+                notes = self._block_to_notes(block)
+                writer.add_notes(notes)
                 self._increment_progress()

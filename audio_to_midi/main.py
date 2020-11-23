@@ -84,7 +84,19 @@ def parse_args():
         help="Transpose the MIDI pitches by a constant offset.",
     )
     parser.add_argument(
-        "--key", "-k", type=int, nargs="+", default=[], help="Map to a pitch set."
+        "--pitch-set",
+        "-p",
+        type=int,
+        nargs="+",
+        default=[],
+        help="Map to a pitch set. Values must be in the range: [0, 11]. Ex: -p 0 2 4 5 7 9 11",
+    )
+    parser.add_argument(
+        "--pitch-range",
+        "-P",
+        nargs=2,
+        type=int,
+        help="The minimumand maximum allowed MIDI notes. These may be superseded by the calculated FFT range.",
     )
     parser.add_argument(
         "--no-progress", "-n", action="store_true", help="Don't print the progress bar."
@@ -100,14 +112,18 @@ def parse_args():
     if args.single_note:
         args.note_count = 1
 
-    if args.key:
-        for key in args.key:
+    if args.pitch_set:
+        for key in args.pitch_set:
             if key not in range(12):
                 raise RuntimeError("Key values must be in the range: [0, 12)")
 
     if args.beat:
         args.time_window = _convert_beat_to_time(args.bpm, args.beat)
         print(args.time_window)
+
+    if args.pitch_range:
+        if args.pitch_range[0] > args.pitch_range[1]:
+            raise RuntimeError("Invalid pitch range: {}".format(args.pitch_range))
 
     return args
 
@@ -127,7 +143,8 @@ def main():
             condense_max=args.condense_max,
             note_count=args.note_count,
             transpose=args.transpose,
-            key=args.key,
+            pitch_set=args.pitch_set,
+            pitch_range=args.pitch_range,
             progress=None if args.no_progress else progress_bar.ProgressBar(),
             bpm=args.bpm,
         )

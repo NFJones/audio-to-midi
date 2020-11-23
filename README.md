@@ -16,7 +16,7 @@
 > audio-to-midi --help
 usage: audio-to-midi [-h] [--output OUTPUT] [--time-window TIME_WINDOW] [--activation-level ACTIVATION_LEVEL] [--condense]
                      [--condense-max] [--single-note] [--note-count NOTE_COUNT] [--bpm BPM] [--beat BEAT] [--transpose TRANSPOSE]
-                     [--key KEY [KEY ...]] [--no-progress]
+                     [--pitch-set PITCH_SET [PITCH_SET ...]] [--pitch-range PITCH_RANGE PITCH_RANGE] [--no-progress]
                      infile
 
 positional arguments:
@@ -39,8 +39,10 @@ optional arguments:
   --beat BEAT, -B BEAT  Time window in terms of beats (1/4, 1/8, etc.). Supercedes the time window parameter.
   --transpose TRANSPOSE, -T TRANSPOSE
                         Transpose the MIDI pitches by a constant offset.
-  --key KEY [KEY ...], -k KEY [KEY ...]
-                        Map to a pitch set.
+  --pitch-set PITCH_SET [PITCH_SET ...], -p PITCH_SET [PITCH_SET ...]
+                        Map to a pitch set. Values must be in the range: [0, 11]. Ex: -p 0 2 4 5 7 9 11
+  --pitch-range PITCH_RANGE PITCH_RANGE, -P PITCH_RANGE PITCH_RANGE
+                        The minimumand maximum allowed MIDI notes. These may be superseded by the calculated FFT range.
   --no-progress, -n     Don't print the progress bar.
 ```
 
