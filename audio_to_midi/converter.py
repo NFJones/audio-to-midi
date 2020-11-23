@@ -209,6 +209,7 @@ class Converter:
                 blocksize=self.block_size,
                 always_2d=True,
             ):
-                notes = self._block_to_notes(block)
-                writer.add_notes(notes)
+                if len(block) == self.block_size:
+                    notes = self._block_to_notes(block)
+                    writer.add_notes(notes)
                 self._increment_progress()

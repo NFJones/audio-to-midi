@@ -4,11 +4,11 @@ import python3_midi as midi
 
 
 class NoteState:
-    __slots__ = ["is_active", "event_index", "count"]
+    __slots__ = ["is_active", "event_pos", "count"]
 
-    def __init__(self, is_active=False, event_index=None, count=0):
+    def __init__(self, is_active=False, event_pos=None, count=0):
         self.is_active = is_active
-        self.event_index = event_index
+        self.event_pos = event_pos
         self.count = count
 
 
@@ -30,7 +30,15 @@ class MidiWriter:
         self.skip_count = 1
         self._need_increment = False
 
-        self.track = midi.Track(
+    def __enter__(self):
+        self.stream = midi.FileStream(self.outfile)
+        self.stream.start_pattern(
+            format=1,
+            tick_relative=False,
+            resolution=self.ms_per_beat,
+            tracks=[],
+        )
+        self.stream.start_track(
             events=[
                 midi.TimeSignatureEvent(
                     tick=0,
@@ -42,22 +50,14 @@ class MidiWriter:
             ],
             tick_relative=False,
         )
-
-    def __enter__(self):
         return self
 
     def __exit__(self, type, value, traceback):
         self._terminate_notes()
-        self.track.append(midi.EndOfTrackEvent(tick=1))
-
-        pattern = midi.Pattern(
-            format=1,
-            tick_relative=False,
-            resolution=self.ms_per_beat,
-            tracks=[self.track],
-        )
-
-        midi.write_midifile(self.outfile, pattern)
+        self.stream.add_event(midi.EndOfTrackEvent(tick=1))
+        self.stream.end_track()
+        self.stream.end_pattern()
+        self.stream.close()
 
     def _skip(self):
         self.skip_count += 1
@@ -75,20 +75,20 @@ class MidiWriter:
         return ret
 
     def _note_on(self, channel, pitch, velocity):
-        self.note_state[channel][pitch] = NoteState(
-            True,
-            len(self.track),
-            1,
-        )
-        self.track.append(
+        pos = self.stream.add_event(
             midi.NoteOnEvent(
                 tick=self.tick, channel=channel, pitch=pitch, velocity=velocity
             )
         )
+        self.note_state[channel][pitch] = NoteState(
+            True,
+            pos,
+            1,
+        )
 
     def _note_off(self, channel, pitch):
         self.note_state[channel][pitch] = NoteState()
-        self.track.append(
+        self.stream.add_event(
             midi.NoteOffEvent(
                 tick=self.tick,
                 channel=channel,
@@ -117,16 +117,20 @@ class MidiWriter:
                 if (not self.condense) or (self.condense and not note_state.is_active):
                     self._note_on(channel, note.pitch, note.velocity)
                 elif self.condense and note_state.is_active:
-                    index = note_state.event_index
-                    old_velocity = self.track[index].data[1]
+                    event = self.stream.get_event(
+                        midi.NoteOnEvent, note_state.event_pos
+                    )
+                    old_velocity = event.data[1]
                     if self.condense_max:
-                        self.track[index].data[1] = max(note.velocity, old_velocity)
+                        event.data[1] = max(note.velocity, old_velocity)
                     else:
                         count = note_state.count
                         note_state.count += 1
-                        self.track[index].data[1] = (
-                            (old_velocity * count) + note.velocity
-                        ) // (count + 1)
+                        event.data[1] = ((old_velocity * count) + note.velocity) // (
+                            count + 1
+                        )
+                    if old_velocity != event.data[1]:
+                        self.stream.set_event(event, note_state.event_pos)
 
             if self.condense:
                 active_notes = [
