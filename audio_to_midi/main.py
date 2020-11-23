@@ -56,6 +56,13 @@ def parse_args():
         help="Write the maximum velocity for a condensed note segment rather than the rolling average.",
     )
     parser.add_argument(
+        "--max-note-length",
+        "-M",
+        type=int,
+        default=0,
+        help="The max condensed note length in time window units.",
+    )
+    parser.add_argument(
         "--single-note",
         "-s",
         action="store_true",
@@ -125,6 +132,9 @@ def parse_args():
         if args.pitch_range[0] > args.pitch_range[1]:
             raise RuntimeError("Invalid pitch range: {}".format(args.pitch_range))
 
+    if args.condense_max:
+        args.condense = True
+
     return args
 
 
@@ -141,6 +151,7 @@ def main():
             activation_level=args.activation_level,
             condense=args.condense,
             condense_max=args.condense_max,
+            max_note_length=args.max_note_length,
             note_count=args.note_count,
             transpose=args.transpose,
             pitch_set=args.pitch_set,

@@ -28,6 +28,7 @@ class Converter:
         activation_level=None,
         condense=None,
         condense_max=False,
+        max_note_length=0,
         transpose=0,
         pitch_set=None,
         pitch_range=None,
@@ -46,6 +47,7 @@ class Converter:
         self.time_window = time_window
         self.condense = condense
         self.condense_max = condense_max
+        self.max_note_length = max_note_length
         self.transpose = transpose
         self.pitch_set = pitch_set
         self.pitch_range = pitch_range or [0, 127]
@@ -224,6 +226,7 @@ class Converter:
             bpm=self.bpm,
             condense=self.condense,
             condense_max=self.condense_max,
+            max_note_length=self.max_note_length,
         ) as writer:
             for block in soundfile.blocks(
                 self.infile,

@@ -14,11 +14,19 @@ class NoteState:
 
 class MidiWriter:
     def __init__(
-        self, outfile, channels, time_window, bpm=60, condense=False, condense_max=False
+        self,
+        outfile,
+        channels,
+        time_window,
+        bpm=60,
+        condense=False,
+        condense_max=False,
+        max_note_length=0,
     ):
         self.outfile = outfile
         self.condense = condense
         self.condense_max = condense_max
+        self.max_note_length = max_note_length
         self.channels = channels
         self.time_window = time_window
         self.bpm = bpm
@@ -122,14 +130,15 @@ class MidiWriter:
                     )
                     old_velocity = event.data[1]
                     if self.condense_max:
-                        event.data[1] = max(note.velocity, old_velocity)
+                        new_velocity = max(note.velocity, old_velocity)
                     else:
                         count = note_state.count
                         note_state.count += 1
-                        event.data[1] = ((old_velocity * count) + note.velocity) // (
-                            count + 1
+                        new_velocity = ((old_velocity * count) + note.velocity) // (
+                            note_state.count
                         )
                     if old_velocity != event.data[1]:
+                        event.data[1] = new_velocity
                         self.stream.set_event(event, note_state.event_pos)
 
             if self.condense:
@@ -139,7 +148,10 @@ class MidiWriter:
                     if self.note_state[channel][note].is_active
                 ]
                 for note in active_notes:
-                    if note not in new_notes:
+                    if (
+                        note not in new_notes
+                        or self.note_state[channel][note].count > self.max_note_length
+                    ):
                         stale_notes.append(note)
 
                 for note in stale_notes:
@@ -150,6 +162,6 @@ class MidiWriter:
 
     def _terminate_notes(self):
         for channel in range(self.channels):
-            for pitch, note_state in self.note_state[channel].items():
+            for note, note_state in self.note_state[channel].items():
                 if note_state.is_active:
-                    self._note_off(channel, pitch)
+                    self._note_off(channel, note)
