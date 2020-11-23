@@ -14,8 +14,9 @@
 
 ```shell
 > audio-to-midi --help
-usage: audio-to-midi [-h] [--output OUTPUT] [--time-window TIME_WINDOW] [--activation-level ACTIVATION_LEVEL] [--condense] [--condense-max] [--single-note]
-                     [--note-count NOTE_COUNT] [--bpm BPM] [--transpose TRANSPOSE] [--key KEY [KEY ...]] [--no-progress]
+usage: audio-to-midi [-h] [--output OUTPUT] [--time-window TIME_WINDOW] [--activation-level ACTIVATION_LEVEL] [--condense]
+                     [--condense-max] [--single-note] [--note-count NOTE_COUNT] [--bpm BPM] [--beat BEAT] [--transpose TRANSPOSE]
+                     [--key KEY [KEY ...]] [--no-progress]
                      infile
 
 positional arguments:
@@ -35,6 +36,7 @@ optional arguments:
   --note-count NOTE_COUNT, -C NOTE_COUNT
                         Only add the loudest n notes to the MIDI file for a given time window.
   --bpm BPM, -b BPM     Beats per minute. Defaults: 60
+  --beat BEAT, -B BEAT  Time window in terms of beats (1/4, 1/8, etc.). Supercedes the time window parameter.
   --transpose TRANSPOSE, -T TRANSPOSE
                         Transpose the MIDI pitches by a constant offset.
   --key KEY [KEY ...], -k KEY [KEY ...]
