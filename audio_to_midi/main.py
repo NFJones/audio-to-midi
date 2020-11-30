@@ -103,7 +103,7 @@ def parse_args():
         "-P",
         nargs=2,
         type=int,
-        help="The minimumand maximum allowed MIDI notes. These may be superseded by the calculated FFT range.",
+        help="The minimum and maximum allowed MIDI notes. These may be superseded by the calculated FFT range.",
     )
     parser.add_argument(
         "--no-progress", "-n", action="store_true", help="Don't print the progress bar."

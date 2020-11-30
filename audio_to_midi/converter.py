@@ -121,7 +121,7 @@ class Converter:
         for pitch, velocity in freqs:
             if not (self.pitch_range[0] <= pitch <= self.pitch_range[1]):
                 continue
-            velocity = min(int(127 * (velocity / 100)), 127)
+            velocity = min(int(127 * (velocity / self.bins)), 127)
 
             if velocity > self.activation_level:
                 if not notes[pitch]:
