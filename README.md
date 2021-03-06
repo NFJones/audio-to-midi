@@ -62,3 +62,12 @@ frequencies: min = 200.0 Hz, max = 20000 Hz
 > ls ./*.mid
 ./this_is_a_test.wav.mid
 ```
+
+## Docker Image
+
+Build the docker file with
+`docker build -t audio-to-midi-docker .`
+
+Run any arguments to audio-to-midi like so
+`docker run -v $(pwd):/myfiles -u 1000:1000 audio-to-midi /myfiles/{Input Wav file here} -o /myfiles/{output.mid} {anyotherargumentshere}`
+
