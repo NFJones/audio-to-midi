@@ -1,6 +1,6 @@
 cffi==1.12.3
 Cython==0.29.7
-numpy==1.16.3
+numpy==1.22.0
 pycparser==2.19
 SoundFile==0.10.2
 progressbar2==3.50.0
